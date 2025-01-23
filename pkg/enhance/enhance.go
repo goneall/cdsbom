@@ -35,6 +35,8 @@ func Do(s *sbom.Document) error {
 	return nil
 }
 
+// CoordList takes an SBOM document and returns a slice of all ClearlyDefined
+// Coordinates found in that document.
 func coordList(s *sbom.Document) []string {
 	nodes := s.GetNodeList().GetNodes()
 	coords := make([]string, 0, len(nodes))
