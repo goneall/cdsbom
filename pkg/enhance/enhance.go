@@ -1,5 +1,6 @@
 //
 // Copyright (c) Jeff Mendoza <jlm@jlm.name>
+// Copyright (c) Gary O'Neall <gary@sourceauditor.com>
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
@@ -12,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"strings"
 
@@ -53,6 +55,23 @@ func coordList(s *sbom.Document) []string {
 }
 
 func getDefs(coords []string) (map[string]*cd.Definition, error) {
+	allDefs := make(map[string]*cd.Definition, len(coords))
+	chunkSize := 500
+	for i := 0; i < len(coords); i += chunkSize {
+		end := i + chunkSize
+		if end > len(coords) {
+			end = len(coords)
+		}
+		defs, err := getDefsFromService(coords[i:end])
+		if err != nil {
+			return nil, err
+		}
+		maps.Copy(allDefs, defs)
+	}
+	return allDefs, nil
+}
+
+func getDefsFromService(coords []string) (map[string]*cd.Definition, error) {
 	cs, err := json.Marshal(coords)
 	if err != nil {
 		return nil, fmt.Errorf("error marshalling coordinates: %w", err)
@@ -62,6 +81,7 @@ func getDefs(coords []string) (map[string]*cd.Definition, error) {
 		return nil, fmt.Errorf("error querying ClearlyDefined: %w", err)
 	}
 	if rsp.StatusCode != http.StatusOK {
+		fmt.Println(string(cs))
 		return nil, fmt.Errorf("error querying ClearlyDefined: %v", rsp.Status)
 	}
 	body, err := io.ReadAll(rsp.Body)
