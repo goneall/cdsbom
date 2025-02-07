@@ -53,6 +53,25 @@ func coordList(s *sbom.Document) []string {
 }
 
 func getDefs(coords []string) (map[string]*cd.Definition, error) {
+	allDefs := make(map[string]*cd.Definition)
+	chunkSize := 100
+	for i := 0; i < len(coords); i += chunkSize {
+		end := i + chunkSize
+		if end > len(coords) {
+			end = len(coords)
+		}
+		defs, err := getDefsFromService(coords[i:end])
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range defs {
+			allDefs[k] = v
+		}
+	}
+	return allDefs, nil
+}
+
+func getDefsFromService(coords []string) (map[string]*cd.Definition, error) {
 	cs, err := json.Marshal(coords)
 	if err != nil {
 		return nil, fmt.Errorf("error marshalling coordinates: %w", err)
@@ -62,6 +81,7 @@ func getDefs(coords []string) (map[string]*cd.Definition, error) {
 		return nil, fmt.Errorf("error querying ClearlyDefined: %w", err)
 	}
 	if rsp.StatusCode != http.StatusOK {
+		fmt.Println(string(cs))
 		return nil, fmt.Errorf("error querying ClearlyDefined: %v", rsp.Status)
 	}
 	body, err := io.ReadAll(rsp.Body)
