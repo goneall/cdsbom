@@ -81,7 +81,6 @@ func getDefsFromService(coords []string) (map[string]*cd.Definition, error) {
 		return nil, fmt.Errorf("error querying ClearlyDefined: %w", err)
 	}
 	if rsp.StatusCode != http.StatusOK {
-		fmt.Println(string(cs))
 		return nil, fmt.Errorf("error querying ClearlyDefined: %v", rsp.Status)
 	}
 	body, err := io.ReadAll(rsp.Body)
