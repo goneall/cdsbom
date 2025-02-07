@@ -54,7 +54,7 @@ func coordList(s *sbom.Document) []string {
 
 func getDefs(coords []string) (map[string]*cd.Definition, error) {
 	allDefs := make(map[string]*cd.Definition)
-	chunkSize := 100
+	chunkSize := 500
 	for i := 0; i < len(coords); i += chunkSize {
 		end := i + chunkSize
 		if end > len(coords) {
