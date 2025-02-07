@@ -1,5 +1,6 @@
 //
 // Copyright (c) Jeff Mendoza <jlm@jlm.name>
+// Copyright (c) Gary O'Neall <gary@sourceauditor.com>
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 //
 
@@ -12,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"strings"
 
@@ -53,7 +55,7 @@ func coordList(s *sbom.Document) []string {
 }
 
 func getDefs(coords []string) (map[string]*cd.Definition, error) {
-	allDefs := make(map[string]*cd.Definition)
+	allDefs := make(map[string]*cd.Definition, len(coords))
 	chunkSize := 500
 	for i := 0; i < len(coords); i += chunkSize {
 		end := i + chunkSize
@@ -64,9 +66,7 @@ func getDefs(coords []string) (map[string]*cd.Definition, error) {
 		if err != nil {
 			return nil, err
 		}
-		for k, v := range defs {
-			allDefs[k] = v
-		}
+		maps.Copy(allDefs, defs)
 	}
 	return allDefs, nil
 }
