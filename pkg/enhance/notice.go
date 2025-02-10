@@ -1,12 +1,14 @@
 //
 // Copyright (c) Jeff Mendoza <jlm@jlm.name>
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// SPDX-License-Identifier: MIT
 //
 
 package enhance
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -33,18 +35,25 @@ type NoticeRsp struct {
 
 // Notice takes an SBOM document and queries ClearlyDefined for a NOTICE file
 // for all the recognized components in the SBOM.
-func Notice(s *sbom.Document) (string, error) {
+func Notice(ctx context.Context, s *sbom.Document) (string, error) {
 	c := coordList(s)
-	return request(c)
+	return request(ctx, c)
 }
 
 // request gets the NOTICE file for the coords from ClearlyDefined
-func request(coords []string) (string, error) {
+// TODO: generalize chunking from getDefsto work with that and this.
+func request(ctx context.Context, coords []string) (string, error) {
 	cs, err := json.Marshal(NoticeReq{coords})
 	if err != nil {
 		return "", fmt.Errorf("error marshaling coordinates: %w", err)
 	}
-	rsp, err := http.Post("https://api.clearlydefined.io/notices", "application/json", bytes.NewBuffer(cs))
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.clearlydefined.io/notices", bytes.NewBuffer(cs))
+	if err != nil {
+		return "", fmt.Errorf("error creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	rsp, err := HTTPClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("error getting NOTICE file: %w", err)
 	}

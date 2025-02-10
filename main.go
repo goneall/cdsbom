@@ -1,11 +1,13 @@
 //
 // Copyright (c) Jeff Mendoza <jlm@jlm.name>
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// SPDX-License-Identifier: MIT
 //
 
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -24,7 +26,7 @@ func main() {
 
 	document, format := read(inFile)
 
-	if err := enhance.Do(document); err != nil {
+	if err := enhance.Do(context.Background(), document); err != nil {
 		fmt.Printf("Error enhancing sbom: %v\n", err)
 		os.Exit(1)
 	}

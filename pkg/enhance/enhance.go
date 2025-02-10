@@ -2,6 +2,7 @@
 // Copyright (c) Jeff Mendoza <jlm@jlm.name>
 // Copyright (c) Gary O'Neall <gary@sourceauditor.com>
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// SPDX-License-Identifier: MIT
 //
 
 // Package enhance enhances sbom documents with ClearlyDefined license
@@ -10,26 +11,42 @@ package enhance
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"maps"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/guacsec/sw-id-core/coordinates"
 	"github.com/protobom/protobom/pkg/sbom"
+	"golang.org/x/time/rate"
 
 	"github.com/jeffmendoza/cdsbom/pkg/cd"
 )
+
+var HTTPClient *http.Client
+var Transport http.RoundTripper
+
+func init() {
+	Transport = &transport{
+		Wrapped: http.DefaultTransport,
+		RL:      rate.NewLimiter(rate.Every(time.Minute), 250),
+	}
+	HTTPClient = &http.Client{
+		Transport: Transport,
+	}
+}
 
 // Do modifies the License and LicenseConcluded fields of the Nodes in the
 // provided protobom Document with results from ClearlyDefined Warnings and
 // updates are printed to stdout. TODO: Update to use a provided io.Writer or
 // logger, also to use provided http client/transport and context.
-func Do(s *sbom.Document) error {
+func Do(ctx context.Context, s *sbom.Document) error {
 	coords := coordList(s)
-	defs, err := getDefs(coords)
+	defs, err := getDefs(ctx, coords)
 	if err != nil {
 		return err
 	}
@@ -54,15 +71,18 @@ func coordList(s *sbom.Document) []string {
 	return coords
 }
 
-func getDefs(coords []string) (map[string]*cd.Definition, error) {
+func getDefs(ctx context.Context, coords []string) (map[string]*cd.Definition, error) {
 	allDefs := make(map[string]*cd.Definition, len(coords))
 	chunkSize := 500
 	for i := 0; i < len(coords); i += chunkSize {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		end := i + chunkSize
 		if end > len(coords) {
 			end = len(coords)
 		}
-		defs, err := getDefsFromService(coords[i:end])
+		defs, err := getDefsFromService(ctx, coords[i:end])
 		if err != nil {
 			return nil, err
 		}
@@ -71,12 +91,18 @@ func getDefs(coords []string) (map[string]*cd.Definition, error) {
 	return allDefs, nil
 }
 
-func getDefsFromService(coords []string) (map[string]*cd.Definition, error) {
+func getDefsFromService(ctx context.Context, coords []string) (map[string]*cd.Definition, error) {
 	cs, err := json.Marshal(coords)
 	if err != nil {
 		return nil, fmt.Errorf("error marshalling coordinates: %w", err)
 	}
-	rsp, err := http.Post("https://api.clearlydefined.io/definitions", "application/json", bytes.NewBuffer(cs))
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.clearlydefined.io/definitions", bytes.NewBuffer(cs))
+	if err != nil {
+		return nil, fmt.Errorf("error creating request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	rsp, err := HTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error querying ClearlyDefined: %w", err)
 	}
