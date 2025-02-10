@@ -1,11 +1,13 @@
 //
 // Copyright (c) Jeff Mendoza <jlm@jlm.name>
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
+// SPDX-License-Identifier: MIT
 //
 
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -21,7 +23,7 @@ func main() {
 
 	document := read(inFile)
 
-	notice, err := enhance.Notice(document)
+	notice, err := enhance.Notice(context.Background(), document)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

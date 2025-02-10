@@ -5,6 +5,7 @@ go 1.23.3
 require (
 	github.com/guacsec/sw-id-core v0.1.0
 	github.com/protobom/protobom v0.5.0
+	golang.org/x/time v0.10.0
 )
 
 //replace github.com/guacsec/sw-id-core => ../sw-id-core
