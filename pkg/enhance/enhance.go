@@ -17,6 +17,7 @@ import (
 	"io"
 	"maps"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -58,17 +59,17 @@ func Do(ctx context.Context, s *sbom.Document) error {
 // Coordinates found in that document.
 func coordList(s *sbom.Document) []string {
 	nodes := s.GetNodeList().GetNodes()
-	coords := make([]string, 0, len(nodes))
+	coords := make(map[string]bool)
 	for _, node := range nodes {
 		if p := node.GetIdentifiers()[int32(sbom.SoftwareIdentifierType_PURL)]; p != "" {
 			if c, err := coordinates.ConvertPurlToCoordinate(p); err == nil {
-				coords = append(coords, c.ToString())
+				coords[c.ToString()] = true
 			} else {
 				fmt.Printf("Coordinate conversion not supported for: %q\n", p)
 			}
 		}
 	}
-	return coords
+	return slices.Collect(maps.Keys(coords))
 }
 
 func getDefs(ctx context.Context, coords []string) (map[string]*cd.Definition, error) {
