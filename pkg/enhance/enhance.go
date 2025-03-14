@@ -17,6 +17,7 @@ import (
 	"io"
 	"maps"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -29,8 +30,6 @@ import (
 
 var HTTPClient *http.Client
 var Transport http.RoundTripper
-
-type StringSet map[string]struct{}
 
 func init() {
 	Transport = &transport{
@@ -60,21 +59,17 @@ func Do(ctx context.Context, s *sbom.Document) error {
 // Coordinates found in that document.
 func coordList(s *sbom.Document) []string {
 	nodes := s.GetNodeList().GetNodes()
-	coords := make(StringSet)
+	coords := make(map[string]bool)
 	for _, node := range nodes {
 		if p := node.GetIdentifiers()[int32(sbom.SoftwareIdentifierType_PURL)]; p != "" {
 			if c, err := coordinates.ConvertPurlToCoordinate(p); err == nil {
-				coords[c.ToString()] = struct{}{}
+				coords[c.ToString()] = true
 			} else {
 				fmt.Printf("Coordinate conversion not supported for: %q\n", p)
 			}
 		}
 	}
-	slice := make([]string, 0, len(coords))
-	for str := range coords {
-		slice = append(slice, str)
-	}
-	return slice
+	return slices.Collect(maps.Keys(coords))
 }
 
 func getDefs(ctx context.Context, coords []string) (map[string]*cd.Definition, error) {
