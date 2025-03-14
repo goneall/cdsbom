@@ -22,13 +22,14 @@ import (
 	"time"
 
 	"github.com/guacsec/sw-id-core/coordinates"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/protobom/protobom/pkg/sbom"
 	"golang.org/x/time/rate"
 
 	"github.com/jeffmendoza/cdsbom/pkg/cd"
 )
 
-var HTTPClient *http.Client
+var HTTPClient *retryablehttp.Client
 var Transport http.RoundTripper
 
 func init() {
@@ -36,9 +37,8 @@ func init() {
 		Wrapped: http.DefaultTransport,
 		RL:      rate.NewLimiter(rate.Every(time.Minute), 250),
 	}
-	HTTPClient = &http.Client{
-		Transport: Transport,
-	}
+	HTTPClient = retryablehttp.NewClient()
+	HTTPClient.HTTPClient.Transport = Transport
 }
 
 // Do modifies the License and LicenseConcluded fields of the Nodes in the
@@ -97,7 +97,7 @@ func getDefsFromService(ctx context.Context, coords []string) (map[string]*cd.De
 	if err != nil {
 		return nil, fmt.Errorf("error marshalling coordinates: %w", err)
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.clearlydefined.io/definitions", bytes.NewBuffer(cs))
+	req, err := retryablehttp.NewRequestWithContext(ctx, "POST", "https://api.clearlydefined.io/definitions", bytes.NewBuffer(cs))
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
