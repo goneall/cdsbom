@@ -14,6 +14,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/protobom/protobom/pkg/sbom"
 )
 
@@ -47,7 +48,7 @@ func request(ctx context.Context, coords []string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error marshaling coordinates: %w", err)
 	}
-	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.clearlydefined.io/notices", bytes.NewBuffer(cs))
+	req, err := retryablehttp.NewRequestWithContext(ctx, "POST", "https://api.clearlydefined.io/notices", bytes.NewBuffer(cs))
 	if err != nil {
 		return "", fmt.Errorf("error creating request: %w", err)
 	}
