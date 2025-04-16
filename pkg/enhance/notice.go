@@ -37,7 +37,7 @@ type NoticeRsp struct {
 // Notice takes an SBOM document and queries ClearlyDefined for a NOTICE file
 // for all the recognized components in the SBOM.
 func Notice(ctx context.Context, s *sbom.Document) (string, error) {
-	c := coordList(s)
+	c := CoordList(s)
 	return request(ctx, c)
 }
 
