@@ -59,6 +59,35 @@ not specified.
 Supported formats are the [same as
 Protobom](https://github.com/protobom/protobom/blob/main/README.md#supported-versions-and-formats).
 
+## sbomcoords
+
+### Install:
+
+```sh
+go install github.com/jeffmendoza/cdsbom/sbomcoords@latest
+```
+
+Make sure `$GOBIN` is in your path.
+
+- `$GOBIN` defaults to `$GOPATH/bin`
+- `$GOPATH` defaults to `$HOME/go` on Unix and `%USERPROFILE%\go` on Windows
+
+### Use:
+
+Example:
+```sh
+sbomcoords -out coords.json input-sbom.json
+```
+
+This will read `input-sbom.json` and parse all the dependencies found, looking
+for PURL identifiers. These PURLs will be converted to [ClearlyDefined
+Coordinates](https://docs.clearlydefined.io/docs/get-involved/using-data#clearlydefined-coordinates)
+and de-duplicated. The output file `coords.json` will be a json array of
+Coordinates.
+
+Supported formats are the [same as
+Protobom](https://github.com/protobom/protobom/blob/main/README.md#supported-versions-and-formats).
+
 ## Thanks
 
 This project is possible due to

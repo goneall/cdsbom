@@ -46,7 +46,7 @@ func init() {
 // updates are printed to stdout. TODO: Update to use a provided io.Writer or
 // logger, also to use provided http client/transport and context.
 func Do(ctx context.Context, s *sbom.Document) error {
-	coords := coordList(s)
+	coords := CoordList(s)
 	defs, err := getDefs(ctx, coords)
 	if err != nil {
 		return err
@@ -57,7 +57,7 @@ func Do(ctx context.Context, s *sbom.Document) error {
 
 // CoordList takes an SBOM document and returns a slice of all ClearlyDefined
 // Coordinates found in that document.
-func coordList(s *sbom.Document) []string {
+func CoordList(s *sbom.Document) []string {
 	nodes := s.GetNodeList().GetNodes()
 	coords := make(map[string]bool)
 	for _, node := range nodes {
